@@ -1,5 +1,10 @@
 # fieldbook
 
+[![PyPI](https://img.shields.io/pypi/v/fieldbook)](https://pypi.org/project/fieldbook/)
+[![Python](https://img.shields.io/pypi/pyversions/fieldbook)](https://pypi.org/project/fieldbook/)
+[![CI](https://github.com/vo-h/fieldbook/actions/workflows/ci.yml/badge.svg)](https://github.com/vo-h/fieldbook/actions/workflows/ci.yml)
+[![License](https://img.shields.io/pypi/l/fieldbook)](LICENSE)
+
 fieldbook is a lightweight toolkit for machine-learning experimentation. It versions datasets, records how every result was produced (code, environment, data, seed), tracks experiments, and runs the same script on your machine or on a rented cloud GPU.
 
 - **Low overhead.** There are no servers to deploy or operate. fieldbook is a Python package and a command-line tool; its state lives in your repository, a storage folder or bucket, and a database file. A shared project adds only a bucket and a managed database.
@@ -8,13 +13,49 @@ fieldbook is a lightweight toolkit for machine-learning experimentation. It vers
 
 It is built from open-source components (Lance, MLflow, SkyPilot, DuckDB) and suits one person on one machine as well as a project shared between several. Status: alpha. See the [design](design/README.md).
 
+## What it looks like
+
+```console
+$ fieldbook data add pets ./images
+pets: added 6 items, v1
+
+$ fieldbook run train.py
+trained on 6 files: acc=0.92
+
+$ fieldbook log
+run                     started           author  command   git                   status    metrics
+20261013-204949-7d0bc4  2026-10-13 13:50  ada     train.py  839c08c main+changes  finished  acc=0.92
+
+$ fieldbook run --rerun 20261013-204949
+trained on 6 files: acc=0.92
+rerun of 20261013-204949-7d0bc4 as 20261013-205018-6d9911: reproduced: 1 metrics (acc)
+```
+
+`train.py` is an ordinary script that reads `fb.dataset("pets")` and logs to MLflow. Nothing in it says how to record the run: fieldbook kept the code, the installed packages, the seed, and the dataset version it read, which is what lets `--rerun` run it again and say whether the result holds. Add `--on remote --gpus A10G:1` and the same script runs on a rented GPU.
+
+## How it compares
+
+fieldbook is not a replacement for the tools below so much as the glue most projects end up writing around them. It uses MLflow for tracking and SkyPilot for cloud machines.
+
+| | fieldbook | DVC | MLflow | Weights & Biases |
+|---|---|---|---|---|
+| Versioned datasets | Yes: each dataset is one [Lance](https://github.com/lancedb/lance) table, so a million small files are a handful of objects in a bucket | Yes: tied to git commits, one stored object per file | No: records which dataset a run used | Yes (Artifacts) |
+| What a run records without extra code | Code snapshot, installed packages, seed, dataset versions read and saved | Git commit and pipeline dependencies | Git commit, parameters and metrics | Git commit, packages, parameters and metrics |
+| Rerun a past result and check it still holds | `fieldbook run --rerun` | `dvc repro` for pipelines | No | No |
+| Experiment tracking and UI | MLflow's | Through its VS Code extension or Studio | Yes | Yes |
+| Launch the same script on a cloud GPU | Yes (AWS and RunPod verified) | No | No | Yes (Launch) |
+| Servers or accounts needed | None | None | None locally; a server to share | An account, or a self-hosted server |
+| Made for coding agents | Yes: machine-readable output, attribution, notes, project instructions | No | No | No |
+
+As of October 2026 and to the best of our knowledge; [open an issue](https://github.com/vo-h/fieldbook/issues) if a cell is wrong or out of date.
+
 ## Quick start
 
 Requires macOS or Linux (Windows is not supported; WSL should work but is untested), Python 3.11+, git, and [gitleaks](https://github.com/gitleaks/gitleaks) (`brew install gitleaks`).
 
 ```bash
 pip install "fieldbook[all]"
-cd my-project && fieldbook init
+cd my-project && fieldbook init          # add --agents to brief a coding agent
 
 fieldbook data add pets ./images --set label=unknown    # a versioned dataset
 fieldbook run train.py                                  # code, environment, and data recorded
@@ -31,6 +72,8 @@ User documentation (`docs/`):
 - [docs/guide.md](docs/guide.md): user guide
 - [docs/releasing.md](docs/releasing.md): versions and releases
 - [CHANGELOG.md](CHANGELOG.md)
+
+For coding agents: [AGENTS.md](AGENTS.md) (working on this repository) and [llms.txt](llms.txt) (a summary with links, for assistants answering questions about fieldbook).
 
 Design (`design/`):
 

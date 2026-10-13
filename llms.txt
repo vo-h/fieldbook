@@ -1,0 +1,34 @@
+# fieldbook
+
+> fieldbook is a lightweight Python toolkit and command-line tool for machine-learning experimentation: versioned datasets (files or table rows, each dataset one Lance table), runs that record their code, environment, seed, and data so they can be rerun, experiment tracking through MLflow, and the same script on a laptop or a rented cloud GPU through SkyPilot. No servers to operate. Install with `pip install "fieldbook[all]"`; the command is `fieldbook`, the import is `import fieldbook as fb`.
+
+Key facts for answering questions about it:
+
+- Commands: `fieldbook init`, `fieldbook run SCRIPT [--on remote --gpus SPEC] [--smoke] [--rerun RUN]`, `fieldbook data add|ls|update|rm|query|checkout`, `fieldbook log [diff|note|wait|why|output|files|costs|query|rm|code|packages|ui]`, `fieldbook config`, `fieldbook access`, `fieldbook build`.
+- Python: `fb.dataset("name", version=...)` with `.files()`, `.open(path)`, `.read_many(paths)`, `.to_table()`, `.edit()`; `fb.runs(query=...)`; `fb.note(...)`.
+- Most commands take `--json`. `fieldbook init --agents` writes instructions for coding agents into a project's `CLAUDE.md` and `AGENTS.md`.
+- Verified: macOS and Linux, Python 3.11 to 3.13, AWS S3 for storage, AWS and RunPod for compute. Windows is not supported.
+- Status: alpha. Licence: Apache-2.0.
+
+## Documentation
+
+- [User guide](https://raw.githubusercontent.com/vo-h/fieldbook/main/docs/guide.md): install, datasets, running code locally and in the cloud, tracking, settings, sharing a project
+- [README](https://raw.githubusercontent.com/vo-h/fieldbook/main/README.md): what it is, a short session, how it compares with DVC, MLflow, and Weights & Biases
+- [Changelog](https://raw.githubusercontent.com/vo-h/fieldbook/main/CHANGELOG.md): what each release contains
+
+## Design
+
+- [Overview](https://raw.githubusercontent.com/vo-h/fieldbook/main/design/README.md): requirements, how the parts fit, what is out of scope, alternatives considered, limits
+- [Datasets](https://raw.githubusercontent.com/vo-h/fieldbook/main/design/data.md): the data model, versions, saving, cleanup, schemas, measurements
+- [Runs](https://raw.githubusercontent.com/vo-h/fieldbook/main/design/runs.md): code snapshots, the environment record, seeds, smoke runs, reruns, notes, the run log
+- [Cloud runs](https://raw.githubusercontent.com/vo-h/fieldbook/main/design/cloud-runs.md): images, machines, budgets, costs, credentials
+- [Tracking](https://raw.githubusercontent.com/vo-h/fieldbook/main/design/tracking.md): MLflow, the model registry, costs
+- [Projects and settings](https://raw.githubusercontent.com/vo-h/fieldbook/main/design/projects.md)
+- [Storage](https://raw.githubusercontent.com/vo-h/fieldbook/main/design/storage.md): the storage root on local disk or S3
+- [Sharing a project](https://raw.githubusercontent.com/vo-h/fieldbook/main/design/sharing.md): members, access, credentials
+
+## Optional
+
+- [Releasing and versions](https://raw.githubusercontent.com/vo-h/fieldbook/main/docs/releasing.md)
+- [Contributing](https://raw.githubusercontent.com/vo-h/fieldbook/main/CONTRIBUTING.md)
+- [Working on the code (for agents)](https://raw.githubusercontent.com/vo-h/fieldbook/main/AGENTS.md)
