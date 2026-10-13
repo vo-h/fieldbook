@@ -36,8 +36,11 @@ def machine_role(cfg: Settings, cloud: str, *, build: bool = False) -> "aws.Role
             f"IAM role {role.name} does not exist: run `fieldbook init` to create it"
         )
     if found == "outdated":
-        note(
-            f"warning: IAM role {role.name} differs from the settings; `fieldbook init` updates it"
+        # Not a warning: the role's policy names what a machine may reach and which
+        # machines it may delete, so with an old one a paid machine can outlive its run.
+        raise SkyPilotError(
+            f"IAM role {role.name} no longer matches the settings, so a machine might not "
+            "reach the storage or delete itself: run `fieldbook init` to update it"
         )
     if found == "unknown":
         note(f"warning: cannot read IAM to check role {role.name}; launching with it anyway")

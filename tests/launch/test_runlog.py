@@ -82,7 +82,8 @@ def test_a_commands_output_goes_on_as_before_and_to_the_log(repo: Path, capfd) -
     log.close()
     seen = capfd.readouterr()
     assert seen.out == "to out\n" and seen.err == "to err\n"  # each to its own stream
-    assert sorted(runlog.read(RUN, settings())) == ["to err", "to out"]
+    kept = "".join(runlog.read(RUN, settings()))  # the two streams, as their pieces arrived
+    assert "to err" in kept and "to out" in kept
     plain = runlog.popen([sys.executable, "-c", "print('not kept')"], None)
     assert plain.process.wait() == 0 and capfd.readouterr().out == "not kept\n"
 

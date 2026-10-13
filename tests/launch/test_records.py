@@ -51,6 +51,7 @@ def test_a_runs_state_comes_from_one_listing(repo: Path) -> None:
 def test_every_fieldbook_run_is_listed_with_how_it_ended(repo: Path, gitleaks: Path) -> None:
     (repo / "quiet.py").write_text("import sys\nsys.exit(int(sys.argv[1]))\n")
     assert run_cli("run", "quiet.py", "0")[0] == 0  # saves nothing, logs nothing
+    time.sleep(1.1)  # runs are listed by the second they started in
     assert run_cli("run", "quiet.py", "4")[0] == 4
     # by how they ended: started in the same second, the two are listed in either order
     failed, finished = sorted(history.runs(settings()), key=lambda run: -run.exit_code)

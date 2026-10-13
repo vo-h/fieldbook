@@ -94,6 +94,7 @@ In the project file, or `FIELDBOOK_<NAME>` ([projects.md](projects.md) §2):
 | Credential | How the job gets it |
 |---|---|
 | Bucket access on AWS | The machine's IAM role; no keys copied |
+| A machine role that no longer matches the settings | The launch is refused until `fieldbook init` updates the role. Its policy names the storage a machine may reach and the machines it may delete, so under an old policy a paid machine can outlive its run (seen on AWS: after machines were renamed, two could not delete themselves) |
 | Database login (`PGUSER`, `PGPASSWORD`) | Sent automatically (the password as a secret) |
 | Registry login (ECR, 12 hours) | Fetched on the laptop, sent as SkyPilot secrets: build machines push with it, run machines pull with it |
 | Bucket keys on RunPod | The laptop's AWS keys (environment, `~/.aws`, or SSO), sent as secrets; temporary keys expire, so long RunPod runs need long-lived keys |

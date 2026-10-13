@@ -52,6 +52,10 @@ def test_created_once_and_updated_when_settings_change(
         run.name, run.purpose, {"Version": "2012-10-17", "Statement": aws.SELF_MANAGE}
     )
     assert aws.role_state(changed) == "outdated"
+    # not launched with: a machine under an old policy may be unable to delete itself
+    monkeypatch.setattr(aws, "roles", lambda cfg: (changed, changed))
+    with pytest.raises(skypilot.SkyPilotError, match="no longer matches the settings"):
+        skypilot.machine_role(settings(), "aws")
 
 
 def test_launches_without_permission_to_read_iam(mock_aws, monkeypatch: pytest.MonkeyPatch) -> None:
