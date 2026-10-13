@@ -3,8 +3,8 @@
 # The version is not chosen by hand. It is derived from the git history by
 # PaulHatch/semantic-version: the last `v*` tag, moved on by what the commit messages
 # since then say (docs/releasing.md). The workflow writes that version into
-# pyproject.toml and uv.lock, commits and tags it, builds, publishes to PyPI, and makes a
-# GitHub release.
+# pyproject.toml and uv.lock, builds, publishes to PyPI, and only then commits and tags the
+# version and makes a GitHub release.
 #
 # Off by default: runs only when the repository variable RELEASE_ENABLED is "true".
 # Publishing uses PyPI trusted publishing (no token stored in GitHub): before the first
@@ -38,8 +38,6 @@ jobs:
   build:
     needs: test
     runs-on: ubuntu-latest
-    permissions:
-      contents: write  # the release commit, its tag, and the GitHub release
     outputs:
       version: ${{ steps.pick.outputs.version }}
     steps:
@@ -68,23 +66,12 @@ jobs:
           if git rev-parse -q --verify "refs/tags/v${version}" >/dev/null; then echo "v${version} exists already"; exit 1; fi
           echo "version=${version}" >> "$GITHUB_OUTPUT"
           echo "Releasing ${version} (${{ steps.derived.outputs.version_type }} since ${{ steps.derived.outputs.previous_version }})" >> "$GITHUB_STEP_SUMMARY"
-      - name: Write the version, commit, and tag
+      - name: Write the version and build
         env:
           VERSION: ${{ steps.pick.outputs.version }}
         run: |
           uv version "$VERSION"  # pyproject.toml and uv.lock
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -am "chore(release): ${VERSION}" || echo "the version was already ${VERSION}"
-          git tag "v${VERSION}"
-          git push origin HEAD:main "v${VERSION}"
-      - name: Build
-        run: uv build
-      - name: GitHub release
-        env:
-          GH_TOKEN: ${{ github.token }}
-          VERSION: ${{ steps.pick.outputs.version }}
-        run: gh release create "v${VERSION}" dist/* --title "fieldbook ${VERSION}" --generate-notes
+          uv build
       - uses: actions/upload-artifact@v7
         with:
           name: dist
@@ -102,3 +89,30 @@ jobs:
           name: dist
           path: dist/
       - uses: pypa/gh-action-pypi-publish@v1.14.2
+
+  tag:  # only once PyPI has the release: a failed upload leaves nothing behind to undo
+    needs: [build, publish]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write  # the release commit, its tag, and the GitHub release
+    env:
+      VERSION: ${{ needs.build.outputs.version }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.3.0
+      - uses: actions/download-artifact@v8
+        with:
+          name: dist
+          path: dist/
+      - name: Commit the version and tag it
+        run: |
+          uv version "$VERSION"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -am "chore(release): ${VERSION}" || echo "the version was already ${VERSION}"
+          git tag "v${VERSION}"
+          git push origin HEAD:main "v${VERSION}"
+      - name: GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "v${VERSION}" dist/* --title "fieldbook ${VERSION}" --generate-notes

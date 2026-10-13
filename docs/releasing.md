@@ -40,7 +40,7 @@ The lower bounds are tested too: CI's `lowest` job runs the suite with the oldes
 2. Check the package by hand when the release is a large one: `uv build`, install the wheel with the constraints file into a new environment, and run the user guide's commands in a new project.
 3. Run the release: on GitHub, **Actions > Release > Run workflow** (or `gh workflow run release.yml`).
 
-`.github/workflows/release.yml` then runs the whole CI suite, derives the version, writes it into `pyproject.toml` and `uv.lock`, commits that as `chore(release): <version>`, tags it `v<version>`, builds, makes a GitHub release, and publishes to PyPI. It refuses to run when there is nothing new since the last tag.
+`.github/workflows/release.yml` then runs the whole CI suite, derives the version, writes it into `pyproject.toml` and `uv.lock`, builds, and publishes to PyPI. Only once PyPI has the release does it commit the version as `chore(release): <version>`, tag it `v<version>`, and make a GitHub release, so a failed upload leaves nothing to undo and the workflow can simply be run again. It refuses to run when there is nothing new since the last tag.
 
 - **The first release** has no tag to start from: give the workflow its `version` input (`0.1.0`). The same input overrides the derived version at any time, for example to release 1.0.0.
 - It is off until the repository variable `RELEASE_ENABLED` is `true`. Before the first release, create the `pypi` environment in the repository settings and, on pypi.org, add this repository and `release.yml` as a trusted publisher of the `fieldbook` project (environment `pypi`). No PyPI token is stored in GitHub.
