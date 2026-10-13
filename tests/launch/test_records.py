@@ -52,7 +52,8 @@ def test_every_fieldbook_run_is_listed_with_how_it_ended(repo: Path, gitleaks: P
     (repo / "quiet.py").write_text("import sys\nsys.exit(int(sys.argv[1]))\n")
     assert run_cli("run", "quiet.py", "0")[0] == 0  # saves nothing, logs nothing
     assert run_cli("run", "quiet.py", "4")[0] == 4
-    failed, finished = history.runs(settings())
+    # by how they ended: started in the same second, the two are listed in either order
+    failed, finished = sorted(history.runs(settings()), key=lambda run: -run.exit_code)
     assert (finished.status, finished.exit_code) == ("FINISHED", 0)
     assert (failed.status, failed.exit_code) == ("FAILED", 4) and failed.ended is not None
     assert failed.command == ""  # details are read only for the runs shown

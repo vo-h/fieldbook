@@ -50,7 +50,7 @@ def test_runs_merges_dataset_versions_and_mlflow_runs(two_runs: tuple[str, str])
     assert newest.outputs == ["small@1"] and newest.status == "FINISHED"
     assert newest.params == {"lr": "0.1"} and newest.metrics == {"val_loss": 0.25}
     assert newest.cost_usd == 1.5 and newest.author == "tester"
-    assert history.find(second[:15]).run_id == second
+    assert history.find(second[:19]).run_id == second  # past the second: runs can share one
     with pytest.raises(history.HistoryError, match="matches 2 runs"):
         history.find(second[:4])  # both started today
     with pytest.raises(history.HistoryError, match="no run"):
@@ -85,7 +85,7 @@ def test_diff_shows_what_changed_between_two_runs(two_runs: tuple[str, str]) -> 
     code = result["code"]
     assert code["added"] == ["other.py"] and code["modified"] == ["clean.py"]
     assert "+# tuned" in code["patch"] and code["patch_lines_cut"] == 0
-    exit_code, out = run_cli("log", "diff", first[:17], second)
+    exit_code, out = run_cli("log", "diff", first[:19], second)
     assert exit_code == 0, out
     assert "command\n  a: clean.py\n  b: other.py kept/" in out
     assert "added: other.py" in out and "+# tuned" in out and "val_loss: — -> 0.25" in out

@@ -400,7 +400,9 @@ def test_the_sync_command(project: Path, github: GitHub, tmp_path: Path, monkeyp
     result = runner.invoke(app, ["access", "sync"])
     assert result.exit_code == 1 and "error: gh api graphql: gh: not logged in" in result.output
     assert "Traceback" not in result.output
-    monkeypatch.setenv("PATH", "/usr/bin:/bin")  # no GitHub CLI at all
+    (tmp_path / "no-gh").mkdir()  # git, and no GitHub CLI at all (/usr/bin has one on CI)
+    (tmp_path / "no-gh" / "git").symlink_to(shutil.which("git"))
+    monkeypatch.setenv("PATH", str(tmp_path / "no-gh"))
     result = runner.invoke(app, ["access", "sync"])
     assert result.exit_code == 1 and "brew install gh" in result.output
 
