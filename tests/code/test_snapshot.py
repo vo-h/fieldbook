@@ -67,7 +67,8 @@ def test_code_checkout(repo: Path, gitleaks: Path, tmp_path: Path) -> None:
 
 @pytest.mark.skipif(shutil.which("gitleaks") is None, reason="gitleaks not installed")
 def test_real_gitleaks_finds_a_token(repo: Path) -> None:
-    (repo / "config.py").write_text('aws_key = "AKIAIOSFODNN7EXAMPLQ"\n')
+    fake = "AKIA" + "IOSFODNN7EXAMPLQ"  # put together here, so that no scanner flags this file
+    (repo / "config.py").write_text(f'aws_key = "{fake}"\n')
     code, out = run_cli("run", "clean.py")
     assert code == 1 and "config.py:1  aws-access-token" in out and "AKIA" not in out
 

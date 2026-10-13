@@ -10,7 +10,7 @@ It is built from open-source components (Lance, MLflow, SkyPilot, DuckDB) and su
 
 ## Quick start
 
-Requires Python 3.11+, git, and [gitleaks](https://github.com/gitleaks/gitleaks) (`brew install gitleaks`).
+Requires macOS or Linux (Windows is not supported; WSL should work but is untested), Python 3.11+, git, and [gitleaks](https://github.com/gitleaks/gitleaks) (`brew install gitleaks`).
 
 ```bash
 pip install "fieldbook[all]"
@@ -42,8 +42,15 @@ Design (`design/`):
 - [design/tracking.md](design/tracking.md): MLflow tracking, the model registry, costs
 - [design/cloud-runs.md](design/cloud-runs.md): runs on cloud GPUs
 - [design/sharing.md](design/sharing.md): projects shared between people
-- [design/robotics.md](design/robotics.md): robot learning with LeRobot (designed, not built)
 - [design/testing.md](design/testing.md): how the tests are organized
+
+## Privacy
+
+fieldbook collects nothing and sends nothing anywhere but the storage, database, and cloud accounts you configure. One of its dependencies does: SkyPilot, used for cloud runs (the `aws` and `runpod` extras), reports anonymous usage statistics to its developers unless `SKYPILOT_DISABLE_USAGE_COLLECTION=1` is set.
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md). Report security problems as described in [SECURITY.md](SECURITY.md), not in a public issue.
 
 ## Development
 
@@ -58,7 +65,7 @@ uv run ruff check  # lint
 uv run ruff format # format
 ```
 
-CI (`.github/workflows/ci.yml`) runs lint and tests on Linux (Python 3.11–3.13, with Postgres) and macOS. It is off until the repository variable `CI_ENABLED` is `true`, and can be started by hand.
+CI (`.github/workflows/ci.yml`) runs lint and tests on Linux (Python 3.11–3.13, with Postgres) and macOS, and once more at the lowest dependency versions allowed.
 
 ## License
 

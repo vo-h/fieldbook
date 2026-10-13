@@ -87,7 +87,6 @@ Each part uses one tool or in-house module, and each part's code is one package 
 | [tracking.md](tracking.md) | MLflow: where runs log, run tags, the UI, the model registry, costs per person, autologging |
 | [cloud-runs.md](cloud-runs.md) | `fieldbook run --on remote`: images, credentials and machine roles, checkpoints, cost, the checks done on real clouds |
 | [sharing.md](sharing.md) | Members from GitHub (`fieldbook access sync`), each project's resources, the security model, central services for later |
-| [robotics.md](robotics.md) | Robot learning with LeRobot: designed, not built |
 | [testing.md](testing.md) | How the tests are laid out and isolated; CI |
 
 ## 5. Out of scope
@@ -97,7 +96,7 @@ Each part uses one tool or in-house module, and each part's code is one package 
 | Deploying models (serving, serving monitoring) | Researchers hand models off through the MLflow registry. Demo and evaluation endpoints are recipes in the guide. |
 | Feature store | Point-in-time joins are a DuckDB query (data.md §10) |
 | Labeling and annotation tools (Label Studio, CVAT) | Separate tools; labels are dataset columns |
-| Orchestration: scheduled or data-triggered pipelines | Built with Dagster and removed. Research on one machine or one robot is started by a person, step by step; a background scheduler per project did not fit projects that live in their own folders and are shared (every member's machine would react to the same dataset change). A sequence of steps is a script of `fieldbook run` commands |
+| Orchestration: scheduled or data-triggered pipelines | Built with Dagster and removed. Research on one machine is started by a person, step by step; a background scheduler per project did not fit projects that live in their own folders and are shared (every member's machine would react to the same dataset change). A sequence of steps is a script of `fieldbook run` commands |
 | Remote workspaces | Deferred. Idea for later: a local notebook whose kernel runs on a cloud GPU |
 | Clouds other than AWS and RunPod (GCS, Azure Blob, Cloudflare R2 storage; GCP, Azure machines; other registries) | Deferred, so nothing is claimed that was never run (storage.md §8, cloud-runs.md §3) |
 | Central services: an MLflow server with per-user permissions, a shared SkyPilot API server, single sign-on, a secrets manager | Later. Projects are shared without new servers; how the services would map onto projects is in sharing.md §6 |
@@ -156,4 +155,3 @@ Each part uses one tool or in-house module, and each part's code is one package 
 | A shared project has not been used by two real people end to end | One project, an owner and a member: `fieldbook access sync`, the member's `fieldbook init`, a run each, a cloud run by the member |
 | One add of several million files needs the memory | 6.9 GB for three million (data.md §12): the staged rows are held as Python objects. Larger imports go in several edits; staging them more compactly is the likely change |
 | Large files from a bucket or another dataset | A local file over 64 MB is streamed into the table; one added from an `s3://` source, or copied from another dataset, is still read whole into memory |
-| Robot learning with LeRobot | Designed (robotics.md); decisions open |
