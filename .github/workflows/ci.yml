@@ -1,0 +1,112 @@
+# Lint and test on Linux and macOS.
+#
+# Off by default: the job runs only when the repository variable CI_ENABLED is "true"
+# (Settings > Secrets and variables > Actions > Variables), or when started by hand
+# (Actions > CI > Run workflow). Skipped jobs start no runner, so they use no minutes.
+# Standard runners are free for public repositories; private repositories have a monthly
+# allowance, and macOS minutes cost about 10 times Linux minutes.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+  workflow_call:  # release.yml runs it before building
+    inputs:
+      release:
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    if: vars.CI_ENABLED == 'true' || github.event_name == 'workflow_dispatch' || inputs.release
+    strategy:
+      fail-fast: false
+      matrix:
+        # Every declared Python on Linux; macOS (about 10 times the minutes) on one.
+        os: [ubuntu-latest]
+        python: ["3.11", "3.12", "3.13"]
+        include:
+          - os: macos-latest
+            python: "3.12"
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    env:
+      GITLEAKS_VERSION: "8.30.1"
+      MLFLOW_DISABLE_AGENT_HINT: "1"
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: astral-sh/setup-uv@v10
+        with:
+          enable-cache: true
+
+      - name: Install gitleaks (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          curl -sSL "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" \
+            | sudo tar xz -C /usr/local/bin gitleaks
+          gitleaks version
+
+      - name: Install gitleaks (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          brew install gitleaks age
+          gitleaks version
+
+      - name: Install age (Linux), for project credentials
+        if: runner.os == 'Linux'
+        run: sudo apt-get install -y --no-install-recommends age
+
+      - name: Install Postgres (Linux), for the shared tracking database test
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get install -y --no-install-recommends postgresql
+          echo "$(ls -d /usr/lib/postgresql/*/bin | tail -1)" >> "$GITHUB_PATH"
+
+      - name: Install dependencies
+        run: uv sync --locked --python ${{ matrix.python }}
+
+      - name: Lint
+        run: |
+          uv run ruff check .
+          uv run ruff format --check .
+
+      - name: Check the published constraints match uv.lock
+        if: matrix.os == 'ubuntu-latest' && matrix.python == '3.12'
+        run: |
+          version="$(uv version --short)"
+          uv export --frozen --no-hashes --all-extras --no-dev --no-emit-project \
+            --format requirements-txt -o "/tmp/constraints.txt"
+          diff <(grep -v '^#' "constraints/${version}.txt") <(grep -v '^#' /tmp/constraints.txt) \
+            || { echo "constraints/${version}.txt is out of date: re-export it (docs/releasing.md)"; exit 1; }
+
+      - name: Test
+        run: uv run pytest
+
+  lowest:  # the declared minimum versions must work too: oldest allowed of each dependency
+    if: vars.CI_ENABLED == 'true' || github.event_name == 'workflow_dispatch' || inputs.release
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      GITLEAKS_VERSION: "8.30.1"
+      MLFLOW_DISABLE_AGENT_HINT: "1"
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10
+      - name: Install gitleaks
+        run: |
+          curl -sSL "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" \
+            | sudo tar xz -C /usr/local/bin gitleaks
+          sudo apt-get install -y --no-install-recommends age
+      - name: Test at the lowest allowed versions
+        run: uv run --isolated --resolution lowest-direct --all-extras --group dev --python 3.12 -- pytest -m "not slow"
