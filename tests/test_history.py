@@ -139,7 +139,9 @@ def test_the_query_command_prints_tables_for_reading_and_for_tools(
     two_runs: tuple[str, str],
 ) -> None:
     first, second = two_runs
-    sql = "select run_id, metrics['val_loss'] as loss, cost_usd, outputs from runs order by run_id"
+    # ordered by what they saved: two runs can start in the same second, and their IDs then
+    # sort by their random endings
+    sql = "select run_id, metrics['val_loss'] as loss, cost_usd, outputs from runs order by 4"
     code, out = run_cli("log", "query", sql)
     assert code == 0, out
     lines = out.splitlines()
@@ -149,7 +151,8 @@ def test_the_query_command_prints_tables_for_reading_and_for_tools(
     assert out.splitlines()[1] == "| --- | --- | --- | --- |"
     assert out.splitlines()[3] == f"| {second} | 0.25 | 1.5 | small@1 |"  # each row cites its run
     rows = json.loads(run_cli("log", "query", "select * from runs", "--format", "json")[1])
-    assert rows[0]["metrics"] == {"val_loss": 0.25} and rows[0]["started"].startswith("20")
+    row = next(r for r in rows if r["run_id"] == second)
+    assert row["metrics"] == {"val_loss": 0.25} and row["started"].startswith("20")
     code, out = run_cli("log", "query", sql, "--format", "csv")
     assert out.splitlines()[0] == "run_id,loss,cost_usd,outputs"
     code, out = run_cli("log", "query", "select nope from runs")
