@@ -2,7 +2,7 @@
 
 ## 0.1.0 (unreleased)
 
-First release: local research, data in S3 and cloud runs on AWS and RunPod, and shared projects. Tested on macOS and Linux with Python 3.11–3.13; tested dependency versions in `constraints/0.1.0.txt`.
+First release: local research, data in S3 and cloud runs on AWS and RunPod, and shared projects. Tested on macOS and Linux with Python 3.11–3.13; tested dependency versions in `constraints.txt`.
 
 The command is `fieldbook`, settings are `FIELDBOOK_*` variables and `[tool.fieldbook]`, and MLflow tags are `fieldbook.*`.
 

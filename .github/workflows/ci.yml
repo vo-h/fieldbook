@@ -27,6 +27,26 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  version:  # what the next release would be, from the tags and the commit messages
+    if: vars.CI_ENABLED == 'true' || github.event_name == 'workflow_dispatch' || inputs.release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          filter: blob:none
+      - id: derived
+        uses: PaulHatch/semantic-version@v6.0.2
+        with:
+          tag_prefix: "v"
+          version_format: "${major}.${minor}.${patch}"
+          enable_prerelease_mode: true
+          search_commit_body: true
+      - run: |
+          echo "Next release: ${{ steps.derived.outputs.version }} (${{ steps.derived.outputs.version_type }}; \
+          ${{ steps.derived.outputs.increment }} commits since ${{ steps.derived.outputs.previous_version }})" \
+            | tee -a "$GITHUB_STEP_SUMMARY"
+
   test:
     if: vars.CI_ENABLED == 'true' || github.event_name == 'workflow_dispatch' || inputs.release
     strategy:
@@ -84,11 +104,10 @@ jobs:
       - name: Check the published constraints match uv.lock
         if: matrix.os == 'ubuntu-latest' && matrix.python == '3.12'
         run: |
-          version="$(uv version --short)"
           uv export --frozen --no-hashes --all-extras --no-dev --no-emit-project \
             --format requirements-txt -o "/tmp/constraints.txt"
-          diff <(grep -v '^#' "constraints/${version}.txt") <(grep -v '^#' /tmp/constraints.txt) \
-            || { echo "constraints/${version}.txt is out of date: re-export it (docs/releasing.md)"; exit 1; }
+          diff <(grep -v '^#' constraints.txt) <(grep -v '^#' /tmp/constraints.txt) \
+            || { echo "constraints.txt is out of date: re-export it (docs/releasing.md)"; exit 1; }
 
       - name: Test
         run: uv run pytest

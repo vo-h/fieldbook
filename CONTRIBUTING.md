@@ -27,6 +27,10 @@ uv run ruff check && uv run ruff format --check
 - **No new server to run and no paid service required.** fieldbook's point is low overhead; a dependency should be open source, widely used, and optional (an extra) unless every user needs it.
 - **Nothing claimed that was not run.** A cloud, a storage provider, or a framework is listed as supported once it has been exercised for real, and the documents say how.
 
+## Commit messages
+
+Version numbers are derived from commit messages (`docs/releasing.md`), so write them as [Conventional Commits](https://www.conventionalcommits.org): `fix(data): ...`, `feat(cli): ...`, `docs: ...`. Mark a change that breaks something users rely on with `!` (`feat(cli)!: ...`); that is what moves the version past a patch, so do not use it lightly.
+
 ## Pull requests
 
 Keep them small and about one thing. Say what the change does and how you checked it. By contributing you agree that your contribution is licensed under the project's licence (Apache-2.0).

@@ -30,7 +30,7 @@ Day to day, run the tests of the package being changed; the whole suite before a
 
 ## 4. CI
 
-Python 3.11–3.13 on Linux (3.12 on macOS), with gitleaks, age, and Postgres installed; a job at the lowest allowed dependency versions (`--resolution lowest-direct`); a check that `constraints/<version>.txt` matches `uv.lock`. A release runs the same suite first.
+Python 3.11–3.13 on Linux (3.12 on macOS), with gitleaks, age, and Postgres installed; a job at the lowest allowed dependency versions (`--resolution lowest-direct`); a check that `constraints.txt` matches `uv.lock`. A release runs the same suite first.
 
 ## 5. Checks against real services
 

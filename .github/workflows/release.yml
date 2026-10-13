@@ -1,22 +1,36 @@
-# Build and publish a release to PyPI when a version tag (v0.1.0, ...) is pushed.
+# Cut a release: Actions > Release > Run workflow.
+#
+# The version is not chosen by hand. It is derived from the git history by
+# PaulHatch/semantic-version: the last `v*` tag, moved on by what the commit messages
+# since then say (docs/releasing.md). The workflow writes that version into
+# pyproject.toml and uv.lock, commits and tags it, builds, publishes to PyPI, and makes a
+# GitHub release.
 #
 # Off by default: runs only when the repository variable RELEASE_ENABLED is "true".
 # Publishing uses PyPI trusted publishing (no token stored in GitHub): before the first
 # release, add this repository and workflow as a trusted publisher of the `fieldbook`
-# project on pypi.org, with the environment name `pypi`. See docs/releasing.md.
+# project on pypi.org, with the environment name `pypi`.
 
 name: Release
 
 on:
-  push:
-    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to release (for the first release: 0.1.0). Empty: derived from the commits."
+        required: false
+        default: ""
 
 permissions:
   contents: read
 
+concurrency:
+  group: release
+  cancel-in-progress: false
+
 jobs:
   test:  # the full CI suite (lint, tests on every Python, constraints check) must pass first
-    if: vars.RELEASE_ENABLED == 'true'
+    if: vars.RELEASE_ENABLED == 'true' && github.ref == 'refs/heads/main'
     uses: ./.github/workflows/ci.yml
     with:
       release: true
@@ -24,15 +38,53 @@ jobs:
   build:
     needs: test
     runs-on: ubuntu-latest
+    permissions:
+      contents: write  # the release commit, its tag, and the GitHub release
+    outputs:
+      version: ${{ steps.pick.outputs.version }}
     steps:
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0  # the whole history and its tags: the version is read from them
       - uses: astral-sh/setup-uv@v10.3.0
-      - name: Check the tag matches the package version
+      - name: Derive the version from the git history
+        id: derived
+        uses: PaulHatch/semantic-version@v6.0.2
+        with:
+          tag_prefix: "v"
+          version_format: "${major}.${minor}.${patch}"
+          enable_prerelease_mode: true  # while 0.x: a breaking change is a minor, a feature a patch
+          search_commit_body: true  # a `BREAKING CHANGE:` footer counts
+      - name: Pick the version
+        id: pick
+        env:
+          GIVEN: ${{ inputs.version }}
+          DERIVED: ${{ steps.derived.outputs.version }}
+          TAGGED: ${{ steps.derived.outputs.is_tagged }}
         run: |
-          version="$(uv version --short)"
-          test "v${version}" = "${GITHUB_REF_NAME}" || { echo "tag ${GITHUB_REF_NAME} != v${version}"; exit 1; }
+          version="${GIVEN:-$DERIVED}"
+          echo "$version" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$' || { echo "not a version: '$version'"; exit 1; }
+          if [ -z "$GIVEN" ] && [ "$TAGGED" = "true" ]; then echo "nothing new since the last release"; exit 1; fi
+          if git rev-parse -q --verify "refs/tags/v${version}" >/dev/null; then echo "v${version} exists already"; exit 1; fi
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+          echo "Releasing ${version} (${{ steps.derived.outputs.version_type }} since ${{ steps.derived.outputs.previous_version }})" >> "$GITHUB_STEP_SUMMARY"
+      - name: Write the version, commit, and tag
+        env:
+          VERSION: ${{ steps.pick.outputs.version }}
+        run: |
+          uv version "$VERSION"  # pyproject.toml and uv.lock
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -am "chore(release): ${VERSION}" || echo "the version was already ${VERSION}"
+          git tag "v${VERSION}"
+          git push origin HEAD:main "v${VERSION}"
       - name: Build
         run: uv build
+      - name: GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.pick.outputs.version }}
+        run: gh release create "v${VERSION}" dist/* --title "fieldbook ${VERSION}" --generate-notes
       - uses: actions/upload-artifact@v7
         with:
           name: dist

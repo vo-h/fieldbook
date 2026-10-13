@@ -23,7 +23,7 @@ If you work with a coding agent, run `fieldbook init --agents` once: it adds a s
 Each project keeps everything it stores on this machine in its own `.fieldbook/` folder; removing a project from the machine is deleting its folder. `fieldbook data`, `fieldbook run`, and the other commands that use data or runs work inside a project (a folder with a project file, or below one).
 
 To install exactly the versions a release was tested with, add its constraints file:
-`pip install "fieldbook[all]" -c constraints/0.1.0.txt`.
+`pip install "fieldbook[all]==0.1.0" -c https://raw.githubusercontent.com/vo-h/fieldbook/v0.1.0/constraints.txt`.
 
 | Extra | Adds |
 |---|---|

@@ -18,7 +18,7 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
 # Compatible ranges here (CI tests the lowest of each); the exact set each release was tested
-# with is published as constraints/<version>.txt (docs/releasing.md).
+# with is published as constraints.txt at its tag (docs/releasing.md).
 dependencies = [
     "fsspec>=2024.6.0",
     "packaging>=23",  # which lock entry is for the image's system
